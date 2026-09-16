@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ledgerline</title>
+<meta name="theme-color" content="#1F5C4E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1 class="serif">Ledgerline</h1>
+    <p class="login-sub">Enter your passcode to sync your data.</p>
+    <input type="password" id="loginPasscode" placeholder="Passcode" autocomplete="current-password">
+    <button class="btn" id="loginBtn">Unlock</button>
+    <div id="loginError" class="login-error"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+
+  <div class="topbar">
+    <h1 class="serif">Ledgerline</h1>
+    <div class="sub" id="todayLabel"></div>
+    <div class="sync-status" id="syncStatus">Synced</div>
+  </div>
+
+  <div class="alert-banner" id="alertBanner"></div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="tasks">Tasks &amp; Projects</div>
+    <div class="tab" data-tab="plans">Plans</div>
+    <div class="tab" data-tab="expenses">Expenses</div>
+    <div class="tab" data-tab="schedule">Schedule</div>
+    <div class="tab" data-tab="settings">Settings</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div class="stats">
+      <div class="stat"><div class="num" id="statOpen">0</div><div class="label">Open tasks</div></div>
+      <div class="stat warn"><div class="num" id="statOverdue">0</div><div class="label">Overdue</div></div>
+      <div class="stat"><div class="num" id="statSpend">$0</div><div class="label">Spent this month</div></div>
+    </div>
+
+    <div class="section-title">Overdue &amp; due today</div>
+    <div id="dashOverdue"></div>
+
+    <div class="section-title">Upcoming (next 7 days)</div>
+    <div id="dashUpcoming"></div>
+  </div>
+
+  <!-- TASKS & PROJECTS -->
+  <div class="view" id="view-tasks">
+    <div class="section-title">Projects</div>
+    <div id="projectAddToggle" class="add-toggle"><span class="plus">+</span> New project</div>
+    <div class="form-card" id="projectForm" style="display:none;">
+      <div class="form-row">
+        <label>Project name</label>
+        <input type="text" id="pName" placeholder="e.g. Website redesign">
+      </div>
+      <button class="btn" id="pSave">Add project</button>
+    </div>
+    <div id="projectList"></div>
+
+    <div class="section-title">Tasks</div>
+    <div id="taskAddToggle" class="add-toggle"><span class="plus">+</span> New task</div>
+    <div class="form-card" id="taskForm" style="display:none;">
+      <div class="form-row">
+        <label>Task</label>
+        <input type="text" id="tTitle" placeholder="What needs doing?">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Project</label>
+          <select id="tProject"><option value="">None</option></select>
+        </div>
+        <div class="form-row">
+          <label>Priority</label>
+          <select id="tPriority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Due date</label>
+        <input type="date" id="tDue">
+      </div>
+      <button class="btn" id="tSave">Add task</button>
+    </div>
+    <div id="taskList"></div>
+  </div>
+
+  <!-- PLANS -->
+  <div class="view" id="view-plans">
+    <div class="add-toggle" id="planAddToggle"><span class="plus">+</span> New plan item</div>
+    <div class="form-card" id="planForm" style="display:none;">
+      <div class="form-row">
+        <label>Plan item</label>
+        <input type="text" id="plTitle" placeholder="e.g. Run 5k three times a week">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Period</label>
+          <select id="plPeriod">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Target date</label>
+          <input type="date" id="plDue">
+        </div>
+      </div>
+      <div class="form-row" style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+        <input type="checkbox" id="plRepeat" style="width:auto;">
+        <label style="margin:0; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink);" for="plRepeat">Repeat automatically when completed</label>
+      </div>
+      <button class="btn" id="plSave">Add plan item</button>
+    </div>
+
+    <div class="period-filter" id="periodFilter">
+      <div class="pf-btn active" data-p="all">All</div>
+      <div class="pf-btn" data-p="daily">Daily</div>
+      <div class="pf-btn" data-p="weekly">Weekly</div>
+      <div class="pf-btn" data-p="monthly">Monthly</div>
+      <div class="pf-btn" data-p="yearly">Yearly</div>
+    </div>
+    <div id="planList"></div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div class="view" id="view-expenses">
+    <div class="exp-total">
+      <div class="amt" id="expMonthTotal">$0.00</div>
+      <div class="lbl" id="expMonthLabel">Spent this month</div>
+    </div>
+
+    <div class="add-toggle" id="expAddToggle"><span class="plus">+</span> New expense</div>
+    <div class="form-card" id="expForm" style="display:none;">
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Amount</label>
+          <input type="number" id="eAmount" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-row">
+          <label>Category</label>
+          <select id="eCategory">
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Housing</option>
+            <option>Utilities</option>
+            <option>Health</option>
+            <option>Leisure</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Date</label>
+          <input type="date" id="eDate">
+        </div>
+        <div class="form-row">
+          <label>Note (optional)</label>
+          <input type="text" id="eNote" placeholder="e.g. Groceries">
+        </div>
+      </div>
+      <button class="btn" id="eSave">Add expense</button>
+    </div>
+
+    <div class="section-title">Budgets this month</div>
+    <div class="add-toggle" id="budgetAddToggle"><span class="plus">+</span> Set a category budget</div>
+    <div class="form-card" id="budgetForm" style="display:none;">
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Category</label>
+          <select id="bCategory">
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Housing</option>
+            <option>Utilities</option>
+            <option>Health</option>
+            <option>Leisure</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Monthly limit</label>
+          <input type="number" id="bLimit" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <button class="btn" id="bSave">Save budget</button>
+    </div>
+    <div id="expByCategory"></div>
+
+    <div class="section-title">Recent expenses</div>
+    <div id="expList"></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="view" id="view-schedule">
+    <div id="scheduleList"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="section-title">Sync</div>
+    <div class="form-card">
+      <div class="form-row">
+        <label>Status</label>
+        <div id="settingsSyncStatus" style="font-size:13.5px;">Synced</div>
+      </div>
+      <button class="btn" id="syncNowBtn">Sync now</button>
+      <button class="btn btn-ghost" id="logoutBtn" style="margin-top:8px;">Lock / switch passcode</button>
+    </div>
+
+    <div class="section-title">Backup &amp; restore</div>
+    <div class="form-card">
+      <div class="form-row">
+        <label>Full backup</label>
+        <button class="btn" id="exportJsonBtn">Export all data (.json)</button>
+      </div>
+      <div class="form-row">
+        <label>Restore from backup</label>
+        <input type="file" id="importJsonInput" accept="application/json">
+      </div>
+      <div id="importStatus" style="font-size:12.5px; color:var(--ink-soft); margin-top:8px;"></div>
+    </div>
+
+    <div class="section-title">Export</div>
+    <div class="form-card">
+      <div class="form-row">
+        <label>Expenses</label>
+        <button class="btn btn-ghost" id="exportExpCsvBtn">Export expenses (.csv)</button>
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <label>Tasks</label>
+        <button class="btn btn-ghost" id="exportTaskCsvBtn">Export tasks (.csv)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

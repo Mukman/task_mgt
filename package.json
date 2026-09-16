@@ -1,0 +1,9 @@
+{
+  "name": "ledgerline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal task, plan, schedule and expense manager - PWA + Vercel backend",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  }
+}
