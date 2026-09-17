@@ -1,46 +1,14 @@
-const CACHE_NAME = 'ledgerline-shell-v1';
-const SHELL_FILES = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+// Intentionally minimal: this app always requires a live connection to the
+// database, so there is no offline app-shell or data caching here. The
+// service worker's only job is to exist, since some browsers use its
+// presence as one of the installability signals for "Add to Home Screen".
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_FILES))
-  );
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // Never cache API calls - always go to the network so data stays live.
-  if (url.pathname.startsWith('/api/')) {
-    return;
-  }
-
-  // App shell: cache-first, falling back to network, so the app opens offline.
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => cached);
-    })
-  );
-});
+// No fetch handler: all requests pass straight through to the network.

@@ -1,11 +1,10 @@
 (function(){
-  const LOCAL_CACHE_KEY = 'ledgerline-cache-v1';
   const PASSCODE_KEY = 'ledgerline-passcode';
   let data = { projects: [], tasks: [], plans: [], expenses: [], budgets: {} };
   let planFilter = 'all';
   let passcode = null;
 
-  // ---------- Service worker ----------
+  // ---------- Service worker (installability only — no offline caching) ----------
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch(()=>{});
@@ -84,7 +83,6 @@
       const result = await apiGet();
       localStorage.setItem(PASSCODE_KEY, val);
       data = normalizeData(result.data);
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data));
       enterApp();
     }catch(err){
       errEl.textContent = 'Wrong passcode, or the server is not set up yet.';
@@ -110,49 +108,39 @@
     setSyncStatus('Syncing…');
     try{
       const result = await apiGet();
-      if(result.data){
-        data = normalizeData(result.data);
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data));
-        render();
-      }
+      data = normalizeData(result.data);
+      render();
       setSyncStatus('Synced', 'ok2');
     }catch(err){
-      setSyncStatus('Offline — showing local copy', 'err');
+      setSyncStatus('Could not reach the server', 'err');
     }
   }
 
-  // ---------- Save (local-first, then push to server) ----------
+  // ---------- Save (always writes straight to the database) ----------
   function save(){
-    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data));
     setSyncStatus('Saving…');
     apiPost(data).then(()=>{
       setSyncStatus('Synced', 'ok2');
     }).catch(()=>{
-      setSyncStatus('Offline — saved locally, will not sync until online', 'err');
+      setSyncStatus('Save failed — check your connection', 'err');
     });
   }
 
   // ---------- Boot ----------
   async function boot(){
     const stored = localStorage.getItem(PASSCODE_KEY);
-    const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-    if(cached){
-      try{ data = normalizeData(JSON.parse(cached)); }catch(e){}
-    }
     if(stored){
       passcode = stored;
-      enterApp();
-      // refresh from server in background in case another device changed things
+      setSyncStatus('Loading…');
       try{
         const result = await apiGet();
-        if(result.data){
-          data = normalizeData(result.data);
-          localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data));
-          render();
-        }
-        setSyncStatus('Synced', 'ok2');
+        data = normalizeData(result.data);
+        enterApp();
       }catch(err){
-        setSyncStatus('Offline — showing local copy', 'err');
+        // Stored passcode is no longer valid, or the server can't be reached — back to login.
+        localStorage.removeItem(PASSCODE_KEY);
+        passcode = null;
+        document.getElementById('loginError').textContent = 'Could not connect — please log in again.';
       }
     }
     // else: login screen stays visible (default state)
